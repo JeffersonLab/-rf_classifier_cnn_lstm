@@ -1,13 +1,14 @@
-# rf_classifier_random_forest
-An rf_classifier pluggable model for analyzing CEBAF C100 RF fault waveform data.  This model utilizes a random forest modeling approach, while input features may very from model to model.
+# rf_classifier_cnn_lstm
+An rf_classifier pluggable model for analyzing CEBAF C100 RF fault waveform data.  This model utilizes a two-branched
+LSTM/CNN deep learning approach based on lightly preprocessed waveform signals.
 
-This software was originaly developed against Python 3.6.9 to match the version of CEBAF's and rf_classifier's Python interpreter.  The most recent version uses Python 3.7.6 as to support more recent versions of some packages.
+This software was originally developed against Python v3.7.7.
 
 **Note:** Make sure rf_classifier has been installed prior to installing this model.  See the Admin Guide at 
 https://jeffersonlab.github.io/rf_classifier for more details.  
 
 ## Documentation, Release Notes, etc.
-https://jeffersonlab.github.io/rf_classifier_random_forest
+https://jeffersonlab.github.io/rf_classifier_cnn_lstm
 
 ## CEBAF Certified Installation
 This section describes a specific installation procedure used by the SQAM.  The General Installation section below 
@@ -22,11 +23,11 @@ Please start the installation procedure with the instructions from here http://d
 
 ### Download Source (Optional)
 As the SQAM, the developer should have given you a code tarball to install.  If not, here is how you would download the
-latest source from github. 
+latest source from GitHub. 
 ```tcsh
 cd /tmp
-git clone https://github.com/JeffersonLab/rf_classifier_random_forest  random_forest_<version>
-cd random_forest_<version>
+git clone https://github.com/JeffersonLab/rf_classifier_cnn_lstm  cnn_lstm_<version>
+cd cnn_lstm_<version>
 git tag -l
 git checkout <version>
 ```
@@ -38,7 +39,7 @@ The installation directory is specified in the rf_classifier application certifi
 For each install location, run "build" target to generate the virtual environment and download any dependencies.  Each
 install location would have the same path, but on a different architecture.
 ```tcsh
-cp -r /tmp/random_forest_<version> /path/to/certified/install/dir
+cp -r /tmp/cnn_tsm_<version> /path/to/certified/install/dir
 cd /path/to/certified/install/dir
 ./setup-certified.bash build
 ```
@@ -62,11 +63,11 @@ Run the compact target to remove everything that isn't needed to be stored.  The
 ```tcsh
 vi audit/diff<version>.txt
 vi release-notes.html
-cd /tmp/random_forest
+cd /tmp/cnn_lstm
 ./setup-certified.bash compact
 cd ..
-mv random_forest random_forest_<version>
-tar -czf random_forest_<version>.tar.gz random_forest_<version>
+mv cnn_lstm cnn_lstm_<version>
+tar -czf cnn_lstm_<version>.tar.gz cnn_lstm_<version>
 ```
 
 ## General Installation
@@ -78,15 +79,15 @@ Clone the repository into the model directory of your local copy of rf_classifie
 
 ```tcsh
 cd rf_classifier/models
-git clone https://github.com/JeffersonLab/rf_classifier_random_forest random_forest_v<version>
-cd random_forest_v<version>
+git clone https://github.com/JeffersonLab/rf_classifier_cnn_lstm cnn_lstm_v<version>
+cd cnn_lstm_v<version>
 git tag -l
 git checkout v<version>
 ```
 
 ### App Setup
-The setup_certified.bash script is the simplest way to perform a generic install.  Most users will simply want to run
-the build and test targest.  These handle basic tasks like creating a virtual environment, uncompressing any large
+The setup_certified.bash script is the simplest way to perform a generic installation.  Most users will simply want to
+run the build and test targets.  These handle basic tasks like creating a virtual environment, decompressing any large
 files, and running unittests.  Note that the unit tests may require a JLab network connections.
 ```tcsh
 ./setup_certified.bash build
