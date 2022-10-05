@@ -33,14 +33,13 @@ build () {
     pip3 install -qq --upgrade pip
     pip3 install -qq -r requirements.txt
     deactivate
-    unzip -oq -d lib/model_files/ lib/model_files/RF_CAVITY*.zip
-    unzip -oq -d lib/model_files/ lib/model_files/RF_FAULT*.zip
 }
 
 test () {
     echo "testing - running unit tests"
     source ./venv/bin/activate
-    python3 test/test_model.py
+    python3 -m unittest
+    deactivate
 }
 
 # This is weird to my sensibilities, but we install by removing unnecessary components the git repo
