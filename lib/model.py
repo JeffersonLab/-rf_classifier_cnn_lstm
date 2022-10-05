@@ -112,9 +112,9 @@ class Model(BaseModel):
             'location': self.example.event_zone,
             'timestamp': self.example.event_datetime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-5],
             'cavity-label': cav_results['cavity-label'],
-            'cavity-confidence': cav_results['cavity-confidence'],
+            'cavity-confidence': float(cav_results['cavity-confidence']),
             'fault-label': fault_results['fault-label'],
-            'fault-confidence': fault_results['fault-confidence']
+            'fault-confidence': float(fault_results['fault-confidence'])
         }
 
     def validate_data(self, deployment='ops'):
