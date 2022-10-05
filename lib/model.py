@@ -1,6 +1,7 @@
 import os
 import sys
 import math
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -9,7 +10,6 @@ from sklearn.preprocessing import StandardScaler
 
 import utils
 import json
-from datetime import datetime
 
 from base_model import BaseModel
 from rfwtools.example import Example
@@ -53,7 +53,7 @@ class Model(BaseModel):
         zone = tokens[-3]
 
         # Save the root data path into the rfwtools configuration
-        data_dir = os.path.join(*tokens[:-3])
+        data_dir = os.path.sep + os.path.join(*tokens[:-3])
         Config().data_dir = data_dir
 
         self.example = Example(zone=zone, dt=dt, cavity_conf=math.nan, fault_conf=math.nan, cavity_label="",
