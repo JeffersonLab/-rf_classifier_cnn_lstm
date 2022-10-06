@@ -1,4 +1,5 @@
 import os
+import platform
 import sys
 import math
 from datetime import datetime
@@ -53,7 +54,10 @@ class Model(BaseModel):
         zone = tokens[-3]
 
         # Save the root data path into the rfwtools configuration
-        data_dir = os.path.sep + os.path.join(*tokens[:-3])
+        if platform.system() == "Windows":
+            data_dir = os.path.join(*tokens[:-3])
+        else:
+            data_dir = os.path.sep + os.path.join(*tokens[:-3])
         Config().data_dir = data_dir
 
         self.example = Example(zone=zone, dt=dt, cavity_conf=math.nan, fault_conf=math.nan, cavity_label="",
