@@ -35,6 +35,7 @@ class TestModel(TestCase):
                                               "Expected 192 from C header, got 216 from PyObject")
             warnings.filterwarnings("ignore", "numpy.ufunc size changed, may indicate binary incompatibility. "
                                               "Expected 216, got 192")
+            mod = None
             failed = 0
             test_file = os.path.join(app_root, 'test', 'test_set.txt')
             test_results_file = os.path.join(app_root, 'test', 'test_results.txt')
@@ -62,7 +63,10 @@ class TestModel(TestCase):
                     expect['cavity-label'] = 'multiple'
                 path = event.event_dir
 
-                mod = Model(path)
+                if mod is None:
+                    mod = Model(path)
+                else:
+                    mod.update_example(path)
 
                 # The history archiver has everything, except recent data.  ops archiver has recent data, but not
                 # anything more than maybe two years old.

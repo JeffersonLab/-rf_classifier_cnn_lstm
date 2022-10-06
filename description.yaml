@@ -43,6 +43,10 @@ details: |+2
     after the fault, down sampled to 4096 samples, and standardized using a modified z-score with 0.001 fill for
     constant signals.
   
+    The cavity model was first trained on data from Nov 2019 to Feb 2022, then we used transfer learning to train only
+    on the data from May 2022 - July 2022.  The fault type model was trained on data from Nov 2019 - July 2022 without
+    the use of transfer learning.
+  
     Zone 0L04 continues to be excluded from analysis based on the recommendation of Tom Powers.
 
     Additional documentation is available in the package docs folder.
