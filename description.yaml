@@ -21,7 +21,7 @@ faultLabels:
   - 'Quench_3ms'
   - 'Single Cav Turn off'
 
-trainingData: "Spring 2019 - Summer 2020 (September 20, 2020)"
+trainingData: "Fall 2019 - Summer 2022 (July 11, 2022)"
 brief: "Uses CNN/LSTM deep learning model to classify RF faults using waveform data extending slightly past the fault."
 # This is YAML's block scaler with block-chomping set to keep final newlines, and an indent indicator (|+2) or
 # 2.  This means to keep the newline formatting, keep initial indents after the first two spaces, and keep
