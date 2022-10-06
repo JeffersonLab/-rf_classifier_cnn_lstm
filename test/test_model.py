@@ -113,11 +113,7 @@ class TestModel(TestCase):
                     # Remove the throws entry from expected since the result won't have this
                     del expect['throws']
                     try:
-                        # self.assertEqual(ascii(expect), ascii(result))
-                        for key in expect.keys():
-                            # self.assertEqual(expect[key], result[key], f"{key}: {expect[key]} != {result[key]}")
-                            self.assertDictEqual(expect, result)
-                        # self.assertDictEqual(result, result)
+                        self.assertDictEqual(expect, result)
                     except Exception as e:
                         failed += 1
                         traceback.print_exc()
