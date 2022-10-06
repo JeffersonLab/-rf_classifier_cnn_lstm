@@ -68,11 +68,11 @@ class Model(BaseModel):
         dt = datetime.strptime(f"{tokens[-2]} {tokens[-1]}", "%Y_%m_%d %H%M%S.%f")
         zone = tokens[-3]
 
-        # Save the root data path into the rfwtools configuration
+        # Save the root data path into the rfwtools configuration.  Windows is weird, C: doesn't get handled correctly.
         if platform.system() == "Windows":
-            data_dir = os.path.join(*tokens[:-3])
+            data_dir = os.path.join(tokens[0], os.sep, *tokens[1:-3])
         else:
-            data_dir = os.path.sep + os.path.join(*tokens[:-3])
+            data_dir = os.path.join(os.path.sep, *tokens[:-3])
         Config().data_dir = data_dir
 
         self.example = Example(zone=zone, dt=dt, cavity_conf=math.nan, fault_conf=math.nan, cavity_label="",
