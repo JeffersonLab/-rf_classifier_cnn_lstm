@@ -7,7 +7,6 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from rfwtools.utils import get_signal_names
-from sklearn.preprocessing import StandardScaler
 
 import utils
 import json
@@ -15,7 +14,7 @@ import json
 from base_model import BaseModel
 from rfwtools.example import Example
 from rfwtools.example_validator import ExampleValidator
-from rfwtools.extractor.windowing import window_extractor, get_example_data
+from rfwtools.extractor.windowing import window_extractor
 from rfwtools.config import Config
 
 import onnxruntime as rt
@@ -45,8 +44,24 @@ class Model(BaseModel):
     def __init__(self, path):
         """Create a Model object.  This performs all data handling, validation, and analysis."""
         # Make sure we do not have a trailing slash to muck up processing later.
+
+        super().__init__(path.rstrip(os.sep))
+
+        self.example = None
+        self.update_example(path)
+
+        self.example.load_data()
+        self.validator = ExampleValidator()
+        self.common_features_df = None
+
+        self.cavity_onnx_session = rt.InferenceSession(os.path.join(lib_dir, 'model_files', 'cavity_model.onnx'))
+        self.fault_onnx_session = rt.InferenceSession(os.path.join(lib_dir, 'model_files', 'fault_model.onnx'))
+
+    def update_example(self, path):
+        """Updates the currently loaded example to reflect the new path"""
         path = path.rstrip(os.sep)
-        super().__init__(path)
+        self.event_dir = path
+        self.zone_name = os.path.split(os.path.split(os.path.split(self.event_dir)[0])[0])[-1]
 
         # Split up the path into it's constituent pieces
         tokens = path.split(os.sep)
@@ -62,9 +77,6 @@ class Model(BaseModel):
 
         self.example = Example(zone=zone, dt=dt, cavity_conf=math.nan, fault_conf=math.nan, cavity_label="",
                                fault_label="", label_source="")
-        self.example.load_data()
-        self.validator = ExampleValidator()
-        self.common_features_df = None
 
     def analyze(self, deployment='ops'):
         """A method for analyzing the data held in event_dir that returns cavity and fault type label information.
@@ -149,14 +161,8 @@ class Model(BaseModel):
         self.validator.validate_cavity_modes(mode=(4, 64), deployment=deployment)
         self.validator.validate_zones()
 
-    def get_cavity_label(self):
-        """Loads the underlying cavity model and performs the predictions based on the common_features_df.
-
-            Returns:
-                A dictionary with format {'cavity-label': <string_label>, 'cavity-confidence': <float in [0,1]>}"
-        """
-        # Load the cavity model and make a prediction about which cavity faulted
-        sess = rt.InferenceSession(os.path.join(lib_dir, 'model_files', 'cavity_model.onnx'))
+    def make_prediction(self, sess):
+        """Use an ONNX InferenceSession to make a prediction based on the current example's features"""
         input_name = sess.get_inputs()[0].name
         label_name = sess.get_outputs()[0].name
 
@@ -168,8 +174,20 @@ class Model(BaseModel):
 
         # The model does not return a probability distribution or a cavity id, but a 9D output.  Run softmax on it to
         # get out prediction and "probability"
-        cavity_id, cavity_confs = utils.softmax(prediction)
-        cavity_confidence = cavity_confs[cavity_id]
+        id, confs = utils.softmax(prediction)
+        confidence = confs[id]
+
+        return id, confidence
+
+
+    def get_cavity_label(self):
+        """Loads the underlying cavity model and performs the predictions based on the common_features_df.
+
+            Returns:
+                A dictionary with format {'cavity-label': <string_label>, 'cavity-confidence': <float in [0,1]>}"
+        """
+        # Load the cavity model and make a prediction about which cavity faulted
+        cavity_id, cavity_confidence = self.make_prediction(self.cavity_onnx_session)
 
         # Convert the results from an int to a human-readable string
         if cavity_id == 0:
@@ -192,43 +210,16 @@ class Model(BaseModel):
         # Make sure we received a valid cavity number
         self.assert_valid_cavity_number(cavity_number)
 
-        # Imputing on a single example is useless since there is no population to provide ranges or median values
-        # Load the fault type model and make a prediction about the type of fault
-        sess = rt.InferenceSession(os.path.join(lib_dir, 'model_files', 'fault_model.onnx'))
-        input_name = sess.get_inputs()[0].name
-        label_name = sess.get_outputs()[0].name
-
-        # The prediction comes out as a 2D array, one row per prediction.  Only one prediction, so extract the first row
-        prediction = sess.run([label_name],
-                              {input_name: self.common_features_df.values.reshape(1, -1, 32).astype(np.float32)})
-        # Model outputs a list of 2D arrays.  Only one prediction, so pull it out of the larger structure for easier
-        # work
-        prediction = prediction[0][0]
-
-        # The model does not return a probability distribution or a fault id, but a 7D output.  Run softmax on it.
-        fault_idx, fault_confs = utils.softmax(prediction)
+        # Load fault type model and make a prediction on the current example's features
+        fault_idx, fault_confidence = self.make_prediction(self.fault_onnx_session)
 
         # Get the fault name and probability associated with that index
         fault_names = ["Quench_100ms", "Quench_3ms", "E_Quench", "Heat Riser Choke", "Microphonics", "Controls Fault",
                        "Single Cav Turn off"]
-        fault_confidence = fault_confs[fault_idx]
         fault_name = fault_names[fault_idx]
 
         return {'fault-label': fault_name, 'fault-confidence': fault_confidence}
 
-        # Imputing on a single example is useless since there is no population to provide ranges or median values
-        # Load the fault type model and make a prediction about the type of fault
-        # rf_fault_model = joblib.load(os.path.join(lib_dir, 'model_files', 'RF_FAULT_20210715.pkl'))
-        # fault_name = rf_fault_model.predict(self.common_features_df)[0]
-
-        # The model returns the string name.  We need the index to get a probability
-        # fault_id = rf_fault_model.classes_.tolist().index(fault_name)
-
-        # predict_proba returns a mildly complicated np.array structure for our purposes different than documented.
-        # It contains an array of predicted probabilities for each category indexed input example, then on classes_.
-        # fault_confidence = rf_fault_model.predict_proba(self.common_features_df)[0][fault_id]
-
-        # return {'fault-label': fault_name, 'fault-confidence': fault_confidence}
 
     @staticmethod
     def assert_valid_cavity_number(cavity_number):
@@ -261,8 +252,12 @@ def main():
         sys.argv.pop(0)
 
         # Iterate over each path and analyze the event
+        mod = None
         for path in sys.argv:
-            mod = Model(path)
+            if mod is None:
+                mod = Model(path)
+            else:
+                mod.update_example(path)
 
             # Determine the zone and timestamp of the event from the path.  If the path is poorly formatted, this will
             # raise an exception
